@@ -1,3 +1,9 @@
+1.9.3.6
+ * Bug 16990: Avoid matching '250 ' to the end of node name
+ * Bug 17565: Tor fundraising campaign donation banner
+ * Bug 17770: Fix alignments on donation banner
+ * Translation updates
+
 1.9.3.5
  * Bug 9623: Spoof Referer when leaving a .onion domain
  * Bug 16735: about:tor should accommodate different fonts/font sizes
