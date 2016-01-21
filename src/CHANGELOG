@@ -1,6 +1,6 @@
 1.9.4.3
  * Bug 16990: Show circuit display for connections using multi-party channels
- * Bug 18019: Empty prompt shown after non-en-US update
+ * Bug 18019: Avoid empty prompt shown after non-en-US update
  * Bug 18004: Remove Tor fundraising donation banner
  * Code cleanup
  * Translation updates
