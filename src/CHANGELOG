@@ -1,3 +1,8 @@
+1.9.4.4
+ * Bug 16990: Don't mishandle multiline commands
+ * Bug 18144: about:tor update arrow position is wrong
+ * Bug 16725: Allow resizing with non-default homepage
+
 1.9.4.3
  * Bug 16990: Show circuit display for connections using multi-party channels
  * Bug 18019: Avoid empty prompt shown after non-en-US update
