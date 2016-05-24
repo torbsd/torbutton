@@ -25,7 +25,7 @@ pref("extensions.torbutton.prompted_language",false);
 // TODO: This is just part of a stopgap until #14429 gets properly implemented.
 // See #7255 for details. We display the warning three times to make sure the
 // user did not click on it by accident.
-pref("extensions.torbutton.maximize_warnings_remaining", 0);
+pref("extensions.torbutton.maximize_warnings_remaining", 3);
 
 // Security prefs:
 pref("extensions.torbutton.cookie_protections",true);
@@ -34,7 +34,7 @@ pref("extensions.torbutton.spoof_english",true);
 pref("extensions.torbutton.clear_http_auth",true);
 pref("extensions.torbutton.close_newnym",true);
 pref("extensions.torbutton.resize_new_windows",true);
-pref("extensions.torbutton.resize_windows",true);
+pref("extensions.torbutton.resize_windows",false);
 pref("extensions.torbutton.startup_state", 2); // 0=non-tor, 1=tor, 2=last
 pref("extensions.torbutton.tor_memory_jar",false);
 pref("extensions.torbutton.nontor_memory_jar",false);
