@@ -34,11 +34,9 @@ var m_tb_window_width = window.outerWidth;
 
 var m_tb_tbb = false;
 
-var m_tb_control_ipc_file = null;    // Set if using IPC (UNIX domain socket).
-var m_tb_control_port = null;        // Set if using TCP.
-var m_tb_control_host = null;        // Set if using TCP.
+var m_tb_control_port = null;
+var m_tb_control_host = null;
 var m_tb_control_pass = null;
-var m_tb_control_desc = null;        // For logging.
 
 var m_tb_orig_BrowserOnAboutPageLoad = null;
 
@@ -263,12 +261,6 @@ function torbutton_init() {
         m_tb_prefs.setCharPref(k_tb_last_browser_version_pref, cur_version);
     }
 
-    let tlps;
-    try {
-        tlps = Cc["@torproject.org/torlauncher-protocol-service;1"]
-                 .getService(Ci.nsISupports).wrappedJSObject;
-    } catch(e) {}
-
     // Bug 1506 P4: These vars are very important for New Identity
     var environ = Components.classes["@mozilla.org/process/environment;1"]
                    .getService(Components.interfaces.nsIEnvironment);
@@ -284,48 +276,33 @@ function torbutton_init() {
         } catch(e) {
             torbutton_log(4, 'unable to read authentication cookie');
         }
-    } else try {
-        // Try to get password from Tor Launcher.
-        m_tb_control_pass = tlps.TorGetPassword(false);
-    } catch(e) {}
-
-    // Try to get the control port IPC file (an nsIFile) from Tor Launcher,
-    // since Tor Launcher knows how to handle its own preferences and how to
-    // resolve relative paths.
-    try {
-        m_tb_control_ipc_file = tlps.TorGetControlIPCFile();
-    } catch(e) {}
-
-    if (m_tb_control_ipc_file) {
-        m_tb_control_desc = m_tb_control_ipc_file.path;
     } else {
-        if (environ.exists("TOR_CONTROL_PORT")) {
-            m_tb_control_port = environ.get("TOR_CONTROL_PORT");
-        } else {
-            try {
-                const kTLControlPortPref = "extensions.torlauncher.control_port";
-                m_tb_control_port = m_tb_prefs.getIntPref(kTLControlPortPref);
-            } catch(e) {
-              // Since we want to disable some features when Tor Launcher is
-              // not installed (e.g., New Identity), we do not set a default
-              // port value here.
-            }
-        }
+        // Try to get password from Tor Launcher.
+        try {
+		    let tlps = Cc["@torproject.org/torlauncher-protocol-service;1"]
+						 .getService(Ci.nsISupports).wrappedJSObject;
+            m_tb_control_pass = tlps.TorGetPassword(false);
+        } catch(e) {}
+	}
 
-        if (m_tb_control_port) {
-          m_tb_control_desc = "" + m_tb_control_port;
-        }
+    if (environ.exists("TOR_CONTROL_PORT")) {
+        m_tb_control_port = environ.get("TOR_CONTROL_PORT");
+    } else {
+        try {
+            const kTLControlPortPref = "extensions.torlauncher.control_port";
+            m_tb_control_port = m_tb_prefs.getIntPref(kTLControlPortPref);
+        } catch(e) {}
+    }
 
-        if (environ.exists("TOR_CONTROL_HOST")) {
-            m_tb_control_host = environ.get("TOR_CONTROL_HOST");
-        } else {
-            try {
-                const kTLControlHostPref = "extensions.torlauncher.control_host";
-                m_tb_control_host = m_tb_prefs.getCharPref(kTLControlHostPref);
-            } catch(e) {
-              m_tb_control_host = "127.0.0.1";
-            }
-        }
+    if (environ.exists("TOR_CONTROL_HOST")) {
+        m_tb_control_host = environ.get("TOR_CONTROL_HOST");
+    } else {
+        try {
+            const kTLControlHostPref = "extensions.torlauncher.control_host";
+            m_tb_control_host = m_tb_prefs.getCharPref(kTLControlHostPref);
+        } catch(e) {
+            m_tb_control_host = "127.0.0.1";
+		}
     }
 
     // Add event listener for about:tor page loads.
@@ -394,8 +371,7 @@ function torbutton_init() {
     torbutton_notify_if_update_needed();
     torbutton_update_sync_ui();
 
-    createTorCircuitDisplay(m_tb_control_ipc_file, m_tb_control_host,
-                            m_tb_control_port, m_tb_control_pass,
+    createTorCircuitDisplay(m_tb_control_host, m_tb_control_port, m_tb_control_pass,
                             "extensions.torbutton.display_circuit");
 
     quantizeBrowserSize(window, 100, 100);
@@ -960,15 +936,9 @@ function torbutton_send_ctrl_cmd(command) {
   m_tb_domWindowUtils.suppressEventHandling(false);
 
   try {
-    let sts = Cc["@mozilla.org/network/socket-transport-service;1"]
-        .getService(Ci.nsISocketTransportService);
-    let socket;
-    if (m_tb_control_ipc_file) {
-      socket = sts.createUnixDomainTransport(m_tb_control_ipc_file);
-    } else {
-      socket = sts.createTransport(null, 0, m_tb_control_host,
-                                   m_tb_control_port, null);
-    }
+    var socketTransportService = Components.classes["@mozilla.org/network/socket-transport-service;1"]
+        .getService(Components.interfaces.nsISocketTransportService);
+    var socket = socketTransportService.createTransport(null, 0, m_tb_control_host, m_tb_control_port, null);
 
     // If we don't get a response from the control port in 2 seconds, someting is wrong..
     socket.setTimeout(Ci.nsISocketTransport.TIMEOUT_READ_WRITE, 2);
@@ -988,21 +958,21 @@ function torbutton_send_ctrl_cmd(command) {
     var bytes = torbutton_socket_readline(inputStream);
 
     if (bytes.indexOf("250") != 0) {
-      torbutton_safelog(4, "Unexpected auth response on control port "+m_tb_control_desc+":", bytes);
+      torbutton_safelog(4, "Unexpected auth response on control port "+m_tb_control_port+":", bytes);
       return null;
     }
 
     outputStream.writeBytes(command, command.length);
     bytes = torbutton_socket_readline(inputStream);
     if(bytes.indexOf("250") != 0) {
-      torbutton_safelog(4, "Unexpected command response on control port "+m_tb_control_desc+":", bytes);
+      torbutton_safelog(4, "Unexpected command response on control port "+m_tb_control_port+":", bytes);
       return null;
     }
 
     // Closing these streams prevents a shutdown hang on Mac OS. See bug 10201.
     inputStream.close();
     outputStream.close();
-    socket.close(Cr.NS_OK);
+    socket.close(Components.results.NS_OK);
     return bytes.substr(4);
   } catch(e) {
     torbutton_log(4, "Exception on control port "+e);
@@ -1304,7 +1274,7 @@ function torbutton_do_new_identity() {
   torbutton_log(3, "New Identity: Sending NEWNYM");
 
   // We only support TBB for newnym.
-  if (!m_tb_control_pass || (!m_tb_control_ipc_file && !m_tb_control_port)) {
+  if (!m_tb_control_pass || !m_tb_control_port) {
     var warning = torbutton_get_property_string("torbutton.popup.no_newnym");
     torbutton_log(5, "Torbutton cannot safely newnym. It does not have access to the Tor Control Port.");
     window.alert(warning);
@@ -1462,7 +1432,7 @@ function torbutton_do_tor_check()
   const kEnvUseTransparentProxy = "TOR_TRANSPROXY";
   var env = Cc["@mozilla.org/process/environment;1"]
                  .getService(Ci.nsIEnvironment);
-  if ((m_tb_control_ipc_file || m_tb_control_port) &&
+  if (m_tb_control_port &&
       !env.exists(kEnvUseTransparentProxy) &&
       !env.exists(kEnvSkipControlPortTest) &&
       m_tb_prefs.getBoolPref("extensions.torbutton.local_tor_check")) {
@@ -1840,9 +1810,8 @@ function torbutton_check_protections()
   // See https://trac.torproject.org/projects/tor/ticket/10353 for more info.
   document.getElementById("torbutton-cookie-protector").hidden = m_tb_prefs.getBoolPref("browser.privatebrowsing.autostart");
 
-  if (!m_tb_control_pass || (!m_tb_control_ipc_file && !m_tb_control_port)) {
+  if (!m_tb_control_pass || !m_tb_control_port)
     document.getElementById("torbutton-new-identity").disabled = true;
-  }
 
   if (!m_tb_tbb && m_tb_prefs.getBoolPref("extensions.torbutton.prompt_torbrowser")) {
       torbutton_inform_about_tbb();

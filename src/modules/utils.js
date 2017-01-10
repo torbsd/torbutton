@@ -192,7 +192,7 @@ let _torControl = {
   },
 }; // _torControl
 
-// __unescapeTorString(str, resultObj)__.
+// __unescapeTorString(str)__.
 // Unescape Tor Control string str (removing surrounding "" and \ escapes).
 // Returns the unescaped string. Throws upon failure.
 var unescapeTorString = function(str) {
