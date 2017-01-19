@@ -1,4 +1,4 @@
-1.9.6.11
+1.9.6.12
  * Bug 20951: Back out Unix domain socket related patches for Tor Browser 6.5
  * Bug 19898: Use DuckDuckGo on about:tor
  * Bug 21243: Add links to es, fr, and pt Tor Browser manual
