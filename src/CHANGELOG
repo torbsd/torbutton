@@ -1,3 +1,9 @@
+1.9.6.13
+ * Bug 21396: Allow leaking of resource/chrome URIs (off by default)
+ * Bug 21574: Add link for zh manual and create manual links dynamically
+ * Bug 21330: Non-usable scrollbar appears in tor browser security settings
+ * Translation updates
+
 1.9.6.12
  * Bug 20951: Back out Unix domain socket related patches for Tor Browser 6.5
  * Bug 19898: Use DuckDuckGo on about:tor
